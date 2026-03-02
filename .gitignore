@@ -1,0 +1,52 @@
+# Build directories
+build/
+build_release/
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+_deps/
+
+# Pico SDK build artifacts
+*.uf2
+*.elf
+*.elf.map
+*.bin
+*.hex
+*.dis
+*.ld
+generated/
+pico-sdk/
+picotool/
+pioasm/
+pioasm-install/
+
+# Release binaries
+release/
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Compile commands
+compile_commands.json
+
+# ESP-IDF
+sdkconfig
+sdkconfig.old
+managed_components/
+dependencies.lock
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
