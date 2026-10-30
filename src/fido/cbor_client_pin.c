@@ -624,6 +624,10 @@ int cbor_client_pin(const uint8_t *data, size_t len) {
         if (*file_get_data(ef_pin) == 0) {
             CBOR_ERROR(CTAP2_ERR_PIN_BLOCKED);
         }
+        if ((pinUvAuthProtocol == 1 && pinHashEnc.len != 16) ||
+            (pinUvAuthProtocol == 2 && pinHashEnc.len != 16 + IV_SIZE)) {
+            CBOR_ERROR(CTAP1_ERR_INVALID_PARAMETER);
+        }
         if (mbedtls_mpi_read_binary(&hkey.ctx.mbed_ecdh.Qp.X, kax.data, kax.len) != 0) {
             CBOR_ERROR(CTAP1_ERR_INVALID_PARAMETER);
         }

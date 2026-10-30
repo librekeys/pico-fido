@@ -22,6 +22,7 @@ import os
 import pytest
 from fido2.ctap import CtapError
 from fido2.client import ClientPin
+from fido2.ctap2.pin import PinProtocolV1, PinProtocolV2
 from fido2.webauthn import UserVerificationRequirement
 from fido2.utils import hmac_sha256
 
@@ -89,6 +90,44 @@ def test_get_pin_token_but_no_pin_set(resetdevice, client_pin):
     with pytest.raises(CtapError) as e:
         client_pin.get_pin_token("TestPin")
     assert e.value.code == CtapError.ERR.PIN_NOT_SET
+
+@pytest.mark.parametrize(
+    ("protocol_type", "pin_hash_len"),
+    [
+        (PinProtocolV1, 15),
+        (PinProtocolV1, 17),
+        (PinProtocolV1, 65),
+        (PinProtocolV1, 80),
+        (PinProtocolV2, 31),
+        (PinProtocolV2, 33),
+        (PinProtocolV2, 81),
+        (PinProtocolV2, 80),
+    ],
+)
+def test_get_pin_token_rejects_invalid_pin_hash_length(device, protocol_type, pin_hash_len):
+    device.reset()
+    ctap = device.client()._backend.ctap2
+    protocol = protocol_type()
+    raw_client_pin = ClientPin(ctap, protocol)
+    raw_client_pin.set_pin("TestPin")
+    try:
+        key_agreement, _ = raw_client_pin._get_shared_secret()
+        retries_before = raw_client_pin.get_pin_retries()[0]
+
+        with pytest.raises(CtapError) as exc:
+            raw_client_pin.ctap.client_pin(
+                protocol.VERSION,
+                9,  # getPinUvAuthTokenUsingPinWithPermissions
+                key_agreement=key_agreement,
+                pin_hash_enc=b"\0" * pin_hash_len,
+                permissions=ClientPin.PERMISSION.GET_ASSERTION,
+            )
+
+        assert exc.value.code == CtapError.ERR.INVALID_PARAMETER
+        assert raw_client_pin.get_pin_retries()[0] == retries_before
+        assert raw_client_pin.get_pin_token("TestPin")
+    finally:
+        device.reset()
 
 def test_change_pin_but_no_pin_set(device, client_pin):
     with pytest.raises(CtapError) as e:
